@@ -1,26 +1,86 @@
-# Lumen PHP Framework
+# Lumen API Project
 
-[![Build Status](https://travis-ci.org/laravel/lumen-framework.svg)](https://travis-ci.org/laravel/lumen-framework)
-[![Total Downloads](https://img.shields.io/packagist/dt/laravel/lumen-framework)](https://packagist.org/packages/laravel/lumen-framework)
-[![Latest Stable Version](https://img.shields.io/packagist/v/laravel/lumen-framework)](https://packagist.org/packages/laravel/lumen-framework)
-[![License](https://img.shields.io/packagist/l/laravel/lumen)](https://packagist.org/packages/laravel/lumen-framework)
+## Description
 
-Laravel Lumen is a stunningly fast PHP micro-framework for building web applications with expressive, elegant syntax. We believe development must be an enjoyable, creative experience to be truly fulfilling. Lumen attempts to take the pain out of development by easing common tasks used in the majority of web projects, such as routing, database abstraction, queueing, and caching.
+This project is a simple RESTful API built using the Lumen micro-framework by Laravel.
+The project allows the management of profiles with full CRUD (Create, Read, Update, Delete) functionality, including associated attributes for each profile.
+Security is ensured through Bearer token authentication for all requests other than GET.
 
-> **Note:** In the years since releasing Lumen, PHP has made a variety of wonderful performance improvements. For this reason, along with the availability of [Laravel Octane](https://laravel.com/docs/octane), we no longer recommend that you begin new projects with Lumen. Instead, we recommend always beginning new projects with [Laravel](https://laravel.com).
+## Technologies Used
 
-## Official Documentation
+- PHP 8.1
+- Lumen 8.x
+- MySQL 8.0
+- Docker
+- Composer
+- PHPUnit for testing
 
-Documentation for the framework can be found on the [Lumen website](https://lumen.laravel.com/docs).
+## Requirements
 
-## Contributing
+- Docker and Docker Compose installed on your machine
+- Git
 
-Thank you for considering contributing to Lumen! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Installation Instructions
 
-## Security Vulnerabilities
+### Step 1: Copy Configuration Files
 
-If you discover a security vulnerability within Lumen, please send an e-mail to Taylor Otwell at taylor@laravel.com. All security vulnerabilities will be promptly addressed.
+Copy the .env.dist file to .env and the .env.testing.dist file to .env.testing.
 
-## License
+```bash
+cp .env.dist .env
+cp .env.testing.dist .env.testing
+```
 
-The Lumen framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Step 2: Build and Start Docker Containers
+
+Make sure Docker is running.
+Then, run the following command to build and start the containers.
+
+```bash
+docker compose up --build -d
+```
+
+### Step 3: Run Migrations
+
+Once the containers are running, execute the migrations to set up the database.
+
+```bash
+bin/docker/artisan migrate
+bin/docker/artisan migrate --env=testing
+```
+
+### Step 4: Import Postman Collection
+
+The repository includes a [LumenAPI.postman_collection.json](LumenAPI.postman_collection.json) file that can be imported into Postman to easily test the APIs.
+Import this file into your Postman.
+
+```bash
+bin/docker/phpunit
+```
+
+### Step 5: Interact with the APIs
+
+You can now interact with the APIs using Postman or any other HTTP client.
+Make sure to include the Bearer token for requests.
+
+## Available Endpoints
+
+- GET /api/profiles - Retrieve all profiles
+- POST /api/profiles - Create a new profile
+- GET /api/profiles/{id} - Retrieve a specific profile
+- PUT /api/profiles/{id} - Update a specific profile
+- DELETE /api/profiles/{id} - Delete a specific profile
+
+## Middleware
+
+- Log Middleware: Logs every request to a log file.
+- Auth Middleware: Verifies the presence of a Bearer token for all requests.
+
+## Events
+
+For every CRUD operation, an event is fired which writes a log entry to the [app/storage/logs/access.log](storage/logs/access.log) file.
+
+## Author
+
+- Name: Gabriele Boni
+- Email: bonig97@gmail.com

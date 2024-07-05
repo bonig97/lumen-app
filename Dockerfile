@@ -13,6 +13,7 @@ WORKDIR /var/www
 COPY . /var/www
 
 COPY .env /var/www/.env
+COPY .env.testing /var/www/.env.testing
 
 RUN composer install
 

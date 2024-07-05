@@ -2,15 +2,19 @@
 
 namespace Tests\Unit;
 
+use App\Http\Controllers\ProfileController;
 use App\Models\Profile;
+use App\Repositories\ProfileRepository;
+use App\Traits\SanitizesPhoneNumbers;
 use Laravel\Lumen\Testing\DatabaseMigrations;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
 {
-    use DatabaseMigrations;
+    use DatabaseMigrations, SanitizesPhoneNumbers;
 
     protected array $headers = [];
+    protected ProfileController $controller;
 
     public function setUp(): void
     {
@@ -21,6 +25,8 @@ class ProfileTest extends TestCase
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
         ];
+
+        $this->controller = new ProfileController(new ProfileRepository());
     }
 
     public function testCreateProfile()
@@ -32,12 +38,6 @@ class ProfileTest extends TestCase
         ];
 
         $response = $this->json('POST', '/api/profiles', $payload, $this->headers);
-
-        if ($response->response->getStatusCode() !== 201) {
-            echo "\nResponse Status Code: " . $response->response->getStatusCode();
-            echo "\nResponse Body: " . $response->response->getContent();
-            echo "\nPayload: " . json_encode($payload);
-        }
 
         $response->seeStatusCode(201)
             ->seeJsonStructure([
@@ -95,12 +95,6 @@ class ProfileTest extends TestCase
 
         $response = $this->json('PUT', "/api/profiles/$profile->id", $payload, $this->headers);
 
-        if ($response->response->getStatusCode() !== 200) {
-            echo "\nResponse Status Code: " . $response->response->getStatusCode();
-            echo "\nResponse Body: " . $response->response->getContent();
-            echo "\nPayload: " . json_encode($payload);
-        }
-
         $response->seeStatusCode(200)
             ->seeJson([
                 'id' => $profile->id,
@@ -119,6 +113,21 @@ class ProfileTest extends TestCase
         $this->json('PUT', '/api/profiles/99999', $payload, $this->headers)
             ->seeStatusCode(404)
             ->seeJson(['error' => 'Profile not found']);
+    }
+
+    public function testUpdateProfileValidationFailure()
+    {
+        $profile = Profile::factory()->create();
+
+        $payload = [
+            'name' => '',
+            'surname' => 'Bianchi',
+        ];
+
+        $response = $this->json('PUT', "/api/profiles/$profile->id", $payload, $this->headers);
+
+        $response->seeStatusCode(422)
+            ->seeJsonStructure(['error', 'details']);
     }
 
     public function testDeleteProfile()
@@ -146,5 +155,17 @@ class ProfileTest extends TestCase
             ->seeJson([
                 'error' => 'Unauthorized',
             ]);
+    }
+
+    public function testSanitizePhoneNumber()
+    {
+        $phoneNumbers = [
+            '+393391234567' => '3391234567',
+            '1234567890' => '1234567890',
+        ];
+
+        foreach ($phoneNumbers as $input => $expected) {
+            $this->assertEquals($expected, $this->sanitizePhoneNumber($input));
+        }
     }
 }

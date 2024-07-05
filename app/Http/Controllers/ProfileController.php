@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Profile;
+use App\Traits\SanitizesPhoneNumbers;
+use Exception;
 use Illuminate\Http\Request;
 use App\Events\ProfileEvent;
 use App\Repositories\ProfileRepository;
@@ -11,6 +13,8 @@ use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller
 {
+    use SanitizesPhoneNumbers;
+
     protected ProfileRepository $repository;
 
     public function __construct(ProfileRepository $repository)
@@ -24,7 +28,7 @@ class ProfileController extends Controller
             $profiles = $this->repository->all();
             event(new ProfileEvent('Read all profiles'));
             return response()->json($profiles);
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return response()->json(['error' => 'Could not fetch profiles'], 500);
         }
     }
@@ -54,7 +58,7 @@ class ProfileController extends Controller
             return response()->json($profile->load('attributes'), 201);
         } catch (ValidationException $e) {
             return response()->json(['error' => 'Validation failed', 'details' => $e->errors()], 422);
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return response()->json(['error' => 'Could not create profile'], 500);
         }
     }
@@ -68,9 +72,9 @@ class ProfileController extends Controller
             }
             event(new ProfileEvent('Read profile with ID: ' . $id));
             return response()->json($profile);
-        } catch (ModelNotFoundException $e) {
+        } catch (ModelNotFoundException) {
             return response()->json(['error' => 'Profile not found'], 404);
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return response()->json(['error' => 'Could not fetch profile'], 500);
         }
     }
@@ -108,9 +112,9 @@ class ProfileController extends Controller
             return response()->json($profile->load('attributes'));
         } catch (ValidationException $e) {
             return response()->json(['error' => 'Validation failed', 'details' => $e->errors()], 422);
-        } catch (ModelNotFoundException $e) {
+        } catch (ModelNotFoundException) {
             return response()->json(['error' => 'Profile not found'], 404);
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return response()->json(['error' => 'Could not update profile'], 500);
         }
     }
@@ -121,16 +125,16 @@ class ProfileController extends Controller
             $profile = Profile::findOrFail($id);
             $profile->delete();
             event(new ProfileEvent('Deleted profile with ID: ' . $id));
-            return response()->json(['message' => 'Profile deleted successfully'], 200);
-        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Profile deleted successfully']);
+        } catch (ModelNotFoundException) {
             return response()->json(['error' => 'Profile not found'], 404);
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return response()->json(['error' => 'Could not delete profile'], 500);
         }
     }
 
     private function sanitizePhoneNumber($phoneNumber)
     {
-        return preg_replace('/^\+39/', '', $phoneNumber);
+        return preg_replace('/^\+\d{1,3}/', '', $phoneNumber);
     }
 }
