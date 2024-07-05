@@ -50,11 +50,24 @@ class ProfileTest extends TestCase
             ]);
     }
 
+    public function testCreateProfileValidationFailure()
+    {
+        $payload = [
+            'surname' => 'Rossi',
+            'phone' => '1234567890',
+        ];
+
+        $response = $this->json('POST', '/api/profiles', $payload, $this->headers);
+
+        $response->seeStatusCode(422)
+            ->seeJsonStructure(['error', 'details']);
+    }
+
     public function testReadProfile()
     {
         $profile = Profile::factory()->create();
 
-        $this->get("/api/profiles/{$profile->id}", $this->headers)
+        $this->get("/api/profiles/$profile->id", $this->headers)
             ->seeStatusCode(200)
             ->seeJson([
                 'id' => $profile->id,
@@ -62,6 +75,13 @@ class ProfileTest extends TestCase
                 'surname' => $profile->surname,
                 'phone' => $profile->phone,
             ]);
+    }
+
+    public function testReadProfileNotFound()
+    {
+        $this->get('/api/profiles/99999', $this->headers)
+            ->seeStatusCode(404)
+            ->seeJson(['error' => 'Profile not found']);
     }
 
     public function testUpdateProfile()
@@ -73,7 +93,7 @@ class ProfileTest extends TestCase
             'surname' => 'Bianchi',
         ];
 
-        $response = $this->json('PUT', "/api/profiles/{$profile->id}", $payload, $this->headers);
+        $response = $this->json('PUT', "/api/profiles/$profile->id", $payload, $this->headers);
 
         if ($response->response->getStatusCode() !== 200) {
             echo "\nResponse Status Code: " . $response->response->getStatusCode();
@@ -89,15 +109,34 @@ class ProfileTest extends TestCase
             ]);
     }
 
+    public function testUpdateProfileNotFound()
+    {
+        $payload = [
+            'name' => 'Luigi',
+            'surname' => 'Bianchi',
+        ];
+
+        $this->json('PUT', '/api/profiles/99999', $payload, $this->headers)
+            ->seeStatusCode(404)
+            ->seeJson(['error' => 'Profile not found']);
+    }
+
     public function testDeleteProfile()
     {
         $profile = Profile::factory()->create();
 
-        $this->json('DELETE', "/api/profiles/{$profile->id}", [], $this->headers)
+        $this->json('DELETE', "/api/profiles/$profile->id", [], $this->headers)
             ->seeStatusCode(200)
             ->seeJson([
                 'message' => 'Profile deleted successfully',
             ]);
+    }
+
+    public function testDeleteProfileNotFound()
+    {
+        $this->json('DELETE', '/api/profiles/99999', [], $this->headers)
+            ->seeStatusCode(404)
+            ->seeJson(['error' => 'Profile not found']);
     }
 
     public function testAuthentication()

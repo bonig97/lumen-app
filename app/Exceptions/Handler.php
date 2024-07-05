@@ -2,53 +2,58 @@
 
 namespace App\Exceptions;
 
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use Laravel\Lumen\Exceptions\Handler as ExceptionHandler;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Laravel\Lumen\Exceptions\Handler as ExceptionHandler;
 use Throwable;
 
 class Handler extends ExceptionHandler
 {
     /**
-     * A list of the exception types that should not be reported.
+     * A list of the exception types that are not reported.
      *
      * @var array
      */
     protected $dontReport = [
-        AuthorizationException::class,
+        ValidationException::class,
         HttpException::class,
         ModelNotFoundException::class,
-        ValidationException::class,
     ];
-
-    /**
-     * Report or log an exception.
-     *
-     * This is a great spot to send exceptions to Sentry, Bugsnag, etc.
-     *
-     * @param  \Throwable  $exception
-     * @return void
-     *
-     * @throws \Exception
-     */
-    public function report(Throwable $exception)
-    {
-        parent::report($exception);
-    }
 
     /**
      * Render an exception into an HTTP response.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Throwable  $exception
-     * @return \Illuminate\Http\Response|\Illuminate\Http\JsonResponse
-     *
-     * @throws \Throwable
+     * @param Request $request
+     * @param Throwable $e
+     * @return JsonResponse
      */
-    public function render($request, Throwable $exception)
+    public function render($request, Throwable $e): JsonResponse
     {
-        return parent::render($request, $exception);
+        if ($e instanceof ModelNotFoundException) {
+            return response()->json(['error' => 'Resource not found'], 404);
+        }
+
+        if ($e instanceof NotFoundHttpException) {
+            return response()->json(['error' => 'Endpoint not found'], 404);
+        }
+
+        if ($e instanceof MethodNotAllowedHttpException) {
+            return response()->json(['error' => 'Method not allowed'], 405);
+        }
+
+        if ($e instanceof ValidationException) {
+            return response()->json(['error' => 'Validation failed', 'details' => $e->errors()], 422);
+        }
+
+        if ($e instanceof HttpException) {
+            return response()->json(['error' => $e->getMessage()], $e->getStatusCode());
+        }
+
+        return response()->json(['error' => 'Server Error'], 500);
     }
 }
